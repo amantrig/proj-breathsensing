@@ -62,6 +62,7 @@ max_peak = np.amax(peak_graph)
 for i in peaks:
 	time_peak.append(time_wav[i])
 
+
 #normalise as per max amplitude
 data_wav_lp =  data_wav_lp/max_peak
 amplitude_envelope = amplitude_envelope/max_peak
@@ -70,20 +71,26 @@ peak_graph = peak_graph/max_peak
 print(np.average(peak_graph), " Numpy Average")
 Average_peak = np.average(peak_graph)
 
-count = 0 
-for i in peak_graph:
-	if i >= (Average_peak*0.8):
-		count = count + 1
-
-print(count, " count")
 
 max_peak_tmp, min_peak_tmp = peakdetect.peakdet(amplitude_envelope,0.09)
-print(len(max_peak_tmp), " max_peak_tmp")
-print(max_peak_tmp, " max peak tmp value", len(max_peak_tmp))
-print(" Peak Properties ",peak_graph, " length", len(peak_graph))
-print(min_peak_tmp, " min peak tmp value", len(min_peak_tmp))
+print(len(max_peak_tmp), " Max Peak Count")
+print(len(min_peak_tmp), " Min Peak Count")
+# print(max_peak_tmp, " max peak tmp value", len(max_peak_tmp))
+# print(" Peak Properties ",peak_graph, " length", len(peak_graph))
+# print(min_peak_tmp, " min peak tmp value", len(min_peak_tmp))
 
+max_peak_tmp_time = []
+max_peak_tmp_value = []
+for i in max_peak_tmp:
+	max_peak_tmp_time.append(time_wav[int(i[0])])
+	max_peak_tmp_value.append(i[1])
+
+min_peak_tmp_time = []
+min_peak_tmp_value = []
+for i in min_peak_tmp:
+	min_peak_tmp_time.append(time_wav[int(i[0])])
+	min_peak_tmp_value.append(i[1])	
 
 # plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter')]},filename='file.html')
-plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter'), go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=time_peak,y=peak_graph,mode='markers',name='Signal Envelope')]},filename='file.html')
+plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter'), go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=max_peak_tmp_time,y=max_peak_tmp_value,mode='markers',name='Max Peak'),go.Scatter(x=min_peak_tmp_time,y=min_peak_tmp_value,mode='markers',name='Min Peaks')]},filename='file.html')
 #plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=time_peak,y=peak_graph,mode='markers',name='Signal Envelope')]},filename='file.html')
