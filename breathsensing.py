@@ -77,6 +77,12 @@ for i in peak_graph:
 
 print(count, " count")
 
+max_peak_tmp, min_peak_tmp = peakdetect.peakdet(amplitude_envelope,0.09)
+print(len(max_peak_tmp), " max_peak_tmp")
+print(max_peak_tmp, " max peak tmp value", len(max_peak_tmp))
+print(" Peak Properties ",peak_graph, " length", len(peak_graph))
+print(min_peak_tmp, " min peak tmp value", len(min_peak_tmp))
+
 
 # plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter')]},filename='file.html')
 plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter'), go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=time_peak,y=peak_graph,mode='markers',name='Signal Envelope')]},filename='file.html')
