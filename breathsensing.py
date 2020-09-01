@@ -10,10 +10,11 @@ from scipy.signal import lfilter, hilbert, chirp,find_peaks,filtfilt, find_peaks
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import peakdetect
+import copy
 
 
 # read WAV file using scipy.io.wavfile
-fs_wav, data_wav = wavfile.read("/home/aman/Proj-healthmask/test60_4s.wav")
+fs_wav, data_wav = wavfile.read("/home/aman/Proj-healthmask/suryanamaskar_16k.wav")
 print(fs_wav)
 
 
@@ -32,65 +33,67 @@ duration = (data_wav.shape[0] / fs_wav)
 print(duration, " Duration")
 count_minutes = int(duration/60)
 print(count_minutes, " minutes")
-
-data_wav_norm = data_wav
-time_wav = np.arange(0, len(data_wav)) / fs_wav
-# plotly.offline.plot({"data": [go.Scatter(x=time_wav,
-#                                            y=data_wav_norm,
-#                                            name='normalized audio signal')]},filename='file.html')
-
-
-# Applying Low-pass Butter filter
-b, a = butter(3, 0.9/(fs_wav*0.5), btype = 'low', analog=False)
-filtered = lfilter(b, a, data_wav_norm)
-data_wav_lp = filtered
-print(len(data_wav_lp), "Length")
-data_wav_lp = data_wav_lp/ (2**15)
+bpm=[]
+for j in range(1,count_minutes+1):
+	print(j,"th iteration")
+	data_wav_norm = copy.deepcopy(data_wav)
+	data_wav_norm = data_wav_norm[(j-1)*60 * fs_wav: (j)*60 * fs_wav]
+	time_wav = np.arange(0, len(data_wav_norm)) / fs_wav
 
 
-#Applying hilbert Transformation to get envelope of the signal
-analytic_signal = hilbert(data_wav_lp)
-amplitude_envelope = np.abs(analytic_signal)
-instantaneous_phase = np.unwrap(np.angle(analytic_signal))
+	# Applying Low-pass Butter filter
+	b, a = butter(3, 0.9/(fs_wav*0.5), btype = 'low', analog=False)
+	filtered = lfilter(b, a, data_wav_norm)
+	data_wav_lp = filtered
+	print(len(data_wav_lp), "Length")
+	data_wav_lp = data_wav_lp/ (2**15)
 
 
-#getting Properties of the envelope
-peaks, prop = find_peaks(amplitude_envelope,height=0, distance=5000)
-peak_graph = prop["peak_heights"]
-time_peak = []
-max_peak = np.amax(peak_graph)
-for i in peaks:
-	time_peak.append(time_wav[i])
+	#Applying hilbert Transformation to get envelope of the signal
+	analytic_signal = hilbert(data_wav_lp)
+	amplitude_envelope = np.abs(analytic_signal)
+	instantaneous_phase = np.unwrap(np.angle(analytic_signal))
 
 
-#normalise as per max amplitude
-data_wav_lp =  data_wav_lp/max_peak
-amplitude_envelope = amplitude_envelope/max_peak
-peak_graph = peak_graph/max_peak
+	#getting Properties of the envelope
+	peaks, prop = find_peaks(amplitude_envelope,height=[0,0.2], distance=5000)
+	peak_graph = prop["peak_heights"]
+	time_peak = []
+	max_peak = np.amax(peak_graph)
+	for i in peaks:
+		time_peak.append(time_wav[i])
 
-print(np.average(peak_graph), " Numpy Average")
-Average_peak = np.average(peak_graph)
+
+	#normalise as per max amplitude
+	data_wav_lp =  data_wav_lp/max_peak
+	amplitude_envelope = amplitude_envelope/max_peak
+	peak_graph = peak_graph/max_peak
+
+	print(np.average(peak_graph), " Numpy Average")
+	Average_peak = np.average(peak_graph)
 
 
-max_peak_tmp, min_peak_tmp = peakdetect.peakdet(amplitude_envelope,0.09)
-print(len(max_peak_tmp), " Max Peak Count")
-print(len(min_peak_tmp), " Min Peak Count")
-# print(max_peak_tmp, " max peak tmp value", len(max_peak_tmp))
-# print(" Peak Properties ",peak_graph, " length", len(peak_graph))
-# print(min_peak_tmp, " min peak tmp value", len(min_peak_tmp))
+	max_peak_tmp, min_peak_tmp = peakdetect.peakdet(amplitude_envelope,0.42)
+	print(len(max_peak_tmp), " Max Peak Count")
+	print(len(min_peak_tmp), " Min Peak Count")
+	# print(max_peak_tmp, " max peak tmp value", len(max_peak_tmp))
+	print(" Peak Properties ",peak_graph, " length", len(peak_graph))
+	# print(min_peak_tmp, " min peak tmp value", len(min_peak_tmp))
 
-max_peak_tmp_time = []
-max_peak_tmp_value = []
-for i in max_peak_tmp:
-	max_peak_tmp_time.append(time_wav[int(i[0])])
-	max_peak_tmp_value.append(i[1])
+	max_peak_tmp_time = []
+	max_peak_tmp_value = []
+	for i in max_peak_tmp:
+		max_peak_tmp_time.append(time_wav[int(i[0])])
+		max_peak_tmp_value.append(i[1])
 
-min_peak_tmp_time = []
-min_peak_tmp_value = []
-for i in min_peak_tmp:
-	min_peak_tmp_time.append(time_wav[int(i[0])])
-	min_peak_tmp_value.append(i[1])	
+	min_peak_tmp_time = []
+	min_peak_tmp_value = []
+	for i in min_peak_tmp:
+		min_peak_tmp_time.append(time_wav[int(i[0])])
+		min_peak_tmp_value.append(i[1])	
+	# print("Average Max", np.average(max_peak_tmp_value))
+	# print("Average Min", np.average(min_peak_tmp_value))
 
-# plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter')]},filename='file.html')
-plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter'), go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=max_peak_tmp_time,y=max_peak_tmp_value,mode='markers',name='Max Peak'),go.Scatter(x=min_peak_tmp_time,y=min_peak_tmp_value,mode='markers',name='Min Peaks')]},filename='file.html')
-#plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=time_peak,y=peak_graph,mode='markers',name='Signal Envelope')]},filename='file.html')
+	#plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter')]},filename='file.html')
+	#plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=data_wav_lp,name='Data Butter Filter'), go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=max_peak_tmp_time,y=max_peak_tmp_value,mode='markers',name='Max Peak'),go.Scatter(x=min_peak_tmp_time,y=min_peak_tmp_value,mode='markers',name='Min Peaks')]},filename='file.html')
+	#plotly.offline.plot({"data": [go.Scatter(x=time_wav,y=amplitude_envelope,name='Signal Envelope'),go.Scatter(x=time_peak,y=peak_graph,mode='markers',name='Signal Envelope')]},filename='file.html')
